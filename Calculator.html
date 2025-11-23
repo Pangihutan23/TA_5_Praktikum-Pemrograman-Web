@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalkulator Interaktif</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .calculator-btn {
+            transition: all 0.2s ease;
+        }
+        .calculator-btn:active {
+            transform: scale(0.95);
+        }
+        .history-item {
+            transition: all 0.3s ease;
+        }
+        .history-item:hover {
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-black-100 min-h-screen flex flex-col items-center justify-center p-4">
+    <div class="max-w-sm w-full bg-white rounded-2xl shadow-lg overflow-hidden">
+        <!-- Main Calculator Area -->
+        <div class="p-6 bg-gradient-to-b from-gray-800 to-gray-900">
+            <!-- Display Area -->
+            <div class="mb-6">
+                <div id="display" class="w-full p-4 text-right text-4xl font-light bg-gray-700 text-white rounded-lg overflow-x-auto mb-2">
+                    0
+                </div>
+                <div id="memory-indicator" class="text-sm text-blue-400 mt-1 text-right hidden">
+                    M
+                </div>
+            </div>
+            
+            <!-- Calculator Buttons -->
+            <div class="grid grid-cols-4 gap-3">
+                <!-- Memory Functions -->
+                <button id="mc" class="calculator-btn bg-gray-600 hover:bg-gray-500 text-white p-4 rounded-xl font-medium">MC</button>
+                <button id="mr" class="calculator-btn bg-gray-600 hover:bg-gray-500 text-white p-4 rounded-xl font-medium">MR</button>
+                <button id="m-minus" class="calculator-btn bg-gray-600 hover:bg-gray-500 text-white p-4 rounded-xl font-medium">M-</button>
+                <button id="m-plus" class="calculator-btn bg-gray-600 hover:bg-gray-500 text-white p-4 rounded-xl font-medium">M+</button>
+                
+                <!-- Second Row -->
+                <button id="clear" class="calculator-btn bg-gray-600 hover:bg-gray-500 text-white p-4 rounded-xl font-medium">C</button>
+                <button id="clear-entry" class="calculator-btn bg-gray-600 hover:bg-gray-500 text-white p-4 rounded-xl font-medium">CE</button>
+                <button id="percent" class="calculator-btn bg-gray-600 hover:bg-gray-500 text-white p-4 rounded-xl font-medium">%</button>
+                <button id="divide" class="calculator-btn bg-gray-600 hover:bg-gray-500 text-white p-4 rounded-xl font-medium">÷</button>
+                
+                <!-- Number Rows -->
+                <button id="seven" class="calculator-btn bg-gray-600 hover:bg-gray-500 text-white p-4 rounded-xl font-medium">7</button>
+                <button id="eight" class="calculator-btn bg-gray-600 hover:bg-gray-500 text-white p-4 rounded-xl font-medium">8</button>
+                <button id="nine" class="calculator-btn bg-gray-600 hover:bg-gray-500 text-white p-4 rounded-xl font-medium">9</button>
+                <button id="multiply" class="calculator-btn bg-gray-600 hover:bg-gray-500 text-white p-4 rounded-xl font-medium">×</button>
+                
+                <button id="four" class="calculator-btn bg-gray-600 hover:bg-gray-500 text-white p-4 rounded-xl font-medium">4</button>
+                <button id="five" class="calculator-btn bg-gray-600 hover:bg-gray-500 text-white p-4 rounded-xl font-medium">5</button>
+                <button id="six" class="calculator-btn bg-gray-600 hover:bg-gray-500 text-white p-4 rounded-xl font-medium">6</button>
+                <button id="subtract" class="calculator-btn bg-gray-600 hover:bg-gray-500 text-white p-4 rounded-xl font-medium">-</button>
+                
+                <button id="one" class="calculator-btn bg-gray-600 hover:bg-gray-500 text-white p-4 rounded-xl font-medium">1</button>
+                <button id="two" class="calculator-btn bg-gray-600 hover:bg-gray-500 text-white p-4 rounded-xl font-medium">2</button>
+                <button id="three" class="calculator-btn bg-gray-600 hover:bg-gray-500 text-white p-4 rounded-xl font-medium">3</button>
+                <button id="add" class="calculator-btn bg-gray-600 hover:bg-gray-500 text-white p-4 rounded-xl font-medium">+</button>
+                
+                <button id="zero" class="calculator-btn bg-gray-600 hover:bg-gray-500 text-white p-4 rounded-xl font-medium text-lg col-span-2">0</button>
+                <button id="decimal" class="calculator-btn bg-gray-600 hover:bg-gray-500 text-white p-4 rounded-xl font-medium text-lg">.</button>
+                <button id="equals" class="calculator-btn bg-gray-600 hover:bg-gray-500 text-white p-4 rounded-xl font-medium">=</button>
+            </div>
+        </div>
+        
+        <!-- History Section -->
+        <div class="bg-gray-100 p-4 border-t">
+            <h2 class="text-lg font-semibold mb-2 text-gray-800">Riwayat</h2>
+            <div id="history" class="max-h-40 overflow-y-auto space-y-2">
+                <!-- History items will be added here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Kalkulator State
+        let calculator = {
+            displayValue: '0',
+            firstOperand: null,
+            waitingForSecondOperand: false,
+            operator: null,
+            memory: 0,
+            history: []
+        };
+
+        // Update Display
+        function updateDisplay() {
+            const display = document.getElementById('display');
+            display.textContent = calculator.displayValue;
+            
+            // Update memory indicator
+            const memoryIndicator = document.getElementById('memory-indicator');
+            if (calculator.memory !== 0) {
+                memoryIndicator.classList.remove('hidden');
+            } else {
+                memoryIndicator.classList.add('hidden');
+            }
+        }
+
+        // Input Digit
+        function inputDigit(digit) {
+            const { displayValue, waitingForSecondOperand } = calculator;
+            
+            if (waitingForSecondOperand === true) {
+                calculator.displayValue = digit;
+                calculator.waitingForSecondOperand = false;
+            } else {
+                calculator.displayValue = displayValue === '0' ? digit : displayValue + digit;
+            }
+        }
+
+        // Input Decimal
+        function inputDecimal() {
+            if (calculator.waitingForSecondOperand === true) {
+                calculator.displayValue = '0.';
+                calculator.waitingForSecondOperand = false;
+                return;
+            }
+            
+            if (!calculator.displayValue.includes('.')) {
+                calculator.displayValue += '.';
+            }
+        }
+
+        // Handle Operator
+        function handleOperator(nextOperator) {
+            const { firstOperand, displayValue, operator } = calculator;
+            const inputValue = parseFloat(displayValue);
+            
+            if (operator && calculator.waitingForSecondOperand) {
+                calculator.operator = nextOperator;
+                return;
+            }
+            
+            if (firstOperand === null && !isNaN(inputValue)) {
+                calculator.firstOperand = inputValue;
+            } else if (operator) {
+                const result = performCalculation();
+                
+                calculator.displayValue = `${parseFloat(result.toFixed(7))}`;
+                calculator.firstOperand = result;
+            }
+            
+            calculator.waitingForSecondOperand = true;
+            calculator.operator = nextOperator;
+        }
+
+        // Perform Calculation
+        function performCalculation() {
+            const { firstOperand, displayValue, operator } = calculator;
+            const inputValue = parseFloat(displayValue);
+            
+            if (isNaN(firstOperand) || isNaN(inputValue)) {
+                return;
+            }
+            
+            let result;
+            
+            switch (operator) {
+                case '+':
+                    result = firstOperand + inputValue;
+                    break;
+                case '-':
+                    result = firstOperand - inputValue;
+                    break;
+                case '×':
+                    result = firstOperand * inputValue;
+                    break;
+                case '÷':
+                    if (inputValue === 0) {
+                        return 'Error';
+                    }
+                    result = firstOperand / inputValue;
+                    break;
+                default:
+                    return inputValue;
+            }
+            
+            return result;
+        }
+
+        // Reset Calculator
+        function resetCalculator() {
+            calculator.displayValue = '0';
+            calculator.firstOperand = null;
+            calculator.waitingForSecondOperand = false;
+            calculator.operator = null;
+        }
+
+        // Clear Entry
+        function clearEntry() {
+            calculator.displayValue = '0';
+        }
+
+        // Add to History
+        function addToHistory(expression, result) {
+            calculator.history.unshift({ expression, result });
+            
+            // Keep only last 5 items
+            if (calculator.history.length > 5) {
+                calculator.history.pop();
+            }
+            
+            updateHistoryDisplay();
+        }
+
+        // Update History Display
+        function updateHistoryDisplay() {
+            const historyElement = document.getElementById('history');
+            historyElement.innerHTML = '';
+            
+            if (calculator.history.length === 0) {
+                historyElement.innerHTML = '<p class="text-gray-500 text-center py-2">Tidak ada riwayat</p>';
+                return;
+            }
+            
+            calculator.history.forEach(item => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item p-2 border-b bg-gray-100 rounded-lg flex justify-between items-center';
+                historyItem.innerHTML = `
+                    <div class="text-gray-600">${item.expression}</div>
+                    <div class="font-medium text-gray-800">${item.result}</div>
+                `;
+                
+                historyItem.addEventListener('click', () => {
+                    calculator.displayValue = item.result.toString();
+                    updateDisplay();
+                });
+                
+                historyElement.appendChild(historyItem);
+            });
+        }
+
+        // Memory Functions
+        function memoryClear() {
+            calculator.memory = 0;
+            updateDisplay();
+        }
+
+        function memoryRecall() {
+            calculator.displayValue = calculator.memory.toString();
+            updateDisplay();
+        }
+
+        function memoryAdd() {
+            calculator.memory += parseFloat(calculator.displayValue);
+            updateDisplay();
+        }
+
+        function memorySubtract() {
+            calculator.memory -= parseFloat(calculator.displayValue);
+            updateDisplay();
+        }
+
+        // Handle Equals
+        function handleEquals() {
+            if (calculator.operator === null || calculator.waitingForSecondOperand) {
+                return;
+            }
+            
+            const expression = `${calculator.firstOperand} ${calculator.operator} ${calculator.displayValue}`;
+            const result = performCalculation();
+            
+            if (result === 'Error') {
+                calculator.displayValue = 'Error';
+                addToHistory(expression, 'Error: Pembagian dengan nol');
+            } else {
+                calculator.displayValue = `${parseFloat(result.toFixed(7))}`;
+                addToHistory(expression, calculator.displayValue);
+            }
+            
+            calculator.firstOperand = null;
+            calculator.waitingForSecondOperand = false;
+            calculator.operator = null;
+        }
+
+        // Handle Percent
+        function handlePercent() {
+            const currentValue = parseFloat(calculator.displayValue);
+            calculator.displayValue = (currentValue / 100).toString();
+            updateDisplay();
+        }
+
+        // Keyboard Support
+        document.addEventListener('keydown', event => {
+            const { key } = event;
+            
+            if (key >= '0' && key <= '9') {
+                inputDigit(key);
+                updateDisplay();
+            } else if (key === '.') {
+                inputDecimal();
+                updateDisplay();
+            } else if (key === '+' || key === '-' || key === '*' || key === '/') {
+                let operator;
+                switch (key) {
+                    case '+': operator = '+'; break;
+                    case '-': operator = '-'; break;
+                    case '*': operator = '×'; break;
+                    case '/': operator = '÷'; break;
+                }
+                handleOperator(operator);
+                updateDisplay();
+            } else if (key === 'Enter' || key === '=') {
+                event.preventDefault();
+                handleEquals();
+                updateDisplay();
+            } else if (key === 'Escape') {
+                resetCalculator();
+                updateDisplay();
+            } else if (key === 'Backspace') {
+                clearEntry();
+                updateDisplay();
+            } else if (key === '%') {
+                handlePercent();
+                updateDisplay();
+            }
+        });
+
+        // Initialize Event Listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            // Number buttons
+            document.getElementById('zero').addEventListener('click', () => {
+                inputDigit('0');
+                updateDisplay();
+            });
+            document.getElementById('one').addEventListener('click', () => {
+                inputDigit('1');
+                updateDisplay();
+            });
+            document.getElementById('two').addEventListener('click', () => {
+                inputDigit('2');
+                updateDisplay();
+            });
+            document.getElementById('three').addEventListener('click', () => {
+                inputDigit('3');
+                updateDisplay();
+            });
+            document.getElementById('four').addEventListener('click', () => {
+                inputDigit('4');
+                updateDisplay();
+            });
+            document.getElementById('five').addEventListener('click', () => {
+                inputDigit('5');
+                updateDisplay();
+            });
+            document.getElementById('six').addEventListener('click', () => {
+                inputDigit('6');
+                updateDisplay();
+            });
+            document.getElementById('seven').addEventListener('click', () => {
+                inputDigit('7');
+                updateDisplay();
+            });
+            document.getElementById('eight').addEventListener('click', () => {
+                inputDigit('8');
+                updateDisplay();
+            });
+            document.getElementById('nine').addEventListener('click', () => {
+                inputDigit('9');
+                updateDisplay();
+            });
+
+            // Operator buttons
+            document.getElementById('add').addEventListener('click', () => {
+                handleOperator('+');
+                updateDisplay();
+            });
+            document.getElementById('subtract').addEventListener('click', () => {
+                handleOperator('-');
+                updateDisplay();
+            });
+            document.getElementById('multiply').addEventListener('click', () => {
+                handleOperator('×');
+                updateDisplay();
+            });
+            document.getElementById('divide').addEventListener('click', () => {
+                handleOperator('÷');
+                updateDisplay();
+            });
+
+            // Other buttons
+            document.getElementById('decimal').addEventListener('click', () => {
+                inputDecimal();
+                updateDisplay();
+            });
+            document.getElementById('equals').addEventListener('click', () => {
+                handleEquals();
+                updateDisplay();
+            });
+            document.getElementById('clear').addEventListener('click', () => {
+                resetCalculator();
+                updateDisplay();
+            });
+            document.getElementById('clear-entry').addEventListener('click', () => {
+                clearEntry();
+                updateDisplay();
+            });
+            document.getElementById('percent').addEventListener('click', () => {
+                handlePercent();
+                updateDisplay();
+            });
+
+            // Memory buttons
+            document.getElementById('mc').addEventListener('click', () => {
+                memoryClear();
+            });
+            document.getElementById('mr').addEventListener('click', () => {
+                memoryRecall();
+            });
+            document.getElementById('m-plus').addEventListener('click', () => {
+                memoryAdd();
+            });
+            document.getElementById('m-minus').addEventListener('click', () => {
+                memorySubtract();
+            });
+
+            // Initialize history display
+            updateHistoryDisplay();
+        });
+    </script>
+</body>
+</html>
