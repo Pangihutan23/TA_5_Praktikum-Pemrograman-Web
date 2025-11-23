@@ -16,5 +16,7 @@ Kalkulator ini juga memiliki memory function yang akan memudahkan dalam menghitu
 
 
 
-!\[Gambar calculator](calculator.png)
+!\[Tampilan kalkulator](calculator.png)
+
+
 
